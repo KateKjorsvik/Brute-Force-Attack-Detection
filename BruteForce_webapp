@@ -1,31 +1,25 @@
 {
-    "name": "Azure Web App Brute Force Detection",
-    "description": "Detects and responds to brute force attacks on an Azure Web App",
-    "severity": "High",
-    "query": "[AzureDiagnostics]\r\n| where Category == 'Application'\r\n| where ResourceType == 'WEBSITE'\r\n| where OperationName == 'Microsoft.Web/sites/log' and Properties.status_s == '401'\r\n| extend clientIP = tostring(split(Properties.clientIp_s, ':')[0])\r\n| summarize failedCount = count() by clientIP\r\n| where failedCount > 10",
-    "tactics": [
-        "Detection",
-        "Response"
-    ],
-    "triggers": [
-        {
-            "op": "greater",
-            "threshold": 10,
-            "metric": {
-                "namespace": "Azure Sentinel",
-                "query": "AzureActivity\r\n| where ActivityName == 'Microsoft.Insights/alertRules_triggered'\r\n| where ResourceProvider == 'Microsoft.Insights'\r\n| where ResourceGroup contains 'YOUR_RESOURCE_GROUP_NAME'\r\n| where Resource contains 'YOUR_SENTINEL_WORKSPACE_NAME'\r\n| summarize Count = count() by AlertRuleName\r\n| where AlertRuleName == 'Azure Web App Brute Force Detection'"
+    "schema": "AzureDiagnostics",
+    "version": "1.0",
+    "tenantId": "<your tenant ID>",
+    "operationName": "Microsoft.Authorization/policyEvaluationResults/write",
+    "category": "AuthorizationPolicy",
+    "resultType": "Success",
+    "properties": {
+        "statusCode": "403",
+        "statusMessage": "Forbidden",
+        "requestUri": "https://yourapp.azurewebsites.net/login",
+        "resourceId": "/subscriptions/<your subscription ID>/resourceGroups/<your resource group>/providers/Microsoft.Web/sites/yourapp",
+        "operationName": "Microsoft.Authorization/policyEvaluationResults/write",
+        "category": "AuthorizationPolicy",
+        "resultType": "Success",
+        "identity": {
+            "claims": {
+                "http://schemas.microsoft.com/identity/claims/objectidentifier": "<user object ID>"
             }
-        }
-    ],
-    "actions": [
-        {
-            "actionType": "LogicApp",
-            "uri": "YOUR_LOGIC_APP_URI",
-            "properties": {
-                "ipAddress": "@triggerBody().clientIP"
-            }
-        }
-    ],
-    "enabled": true,
-    "source": "Azure Sentinel"
+        },
+        "clientIP": "<attacker IP address>",
+        "clientRequestID": "<unique ID for this request>",
+        "time": "<UTC timestamp for this event>"
+    }
 }
